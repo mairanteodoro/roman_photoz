@@ -1,0 +1,362 @@
+[project]
+name = "romancal"
+description = "Library for calibration of science observations from the Nancy Grace Roman Space Telescope"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Roman calibration pipeline developers", email = "help@stsci.edu" },
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "asdf >=3.3.0",
+    "asdf-astropy >=0.5.0",
+    "astropy >=5.3.0",
+    "crds >=11.16.16",
+    "gwcs >=0.21.0",
+    "jsonschema >=4.8",
+    "numpy >=1.23",
+    "photutils >=1.13.0",
+    "pyparsing >=2.4.7",
+    "requests >=2.26",
+    "roman_datamodels>=0.22.0,<0.23.0",
+    # "roman_datamodels @ git+https://github.com/spacetelescope/roman_datamodels.git",
+    "scipy >=1.11",
+   "stcal>=1.10.0,<1.11.0",
+    # "stcal @ git+https://github.com/spacetelescope/stcal.git@main",
+    "stpipe >=0.7.0,<0.8.0",
+    # "stpipe @ git+https://github.com/spacetelescope/stpipe.git@main",
+    "tweakwcs >=0.8.8",
+    "spherical-geometry >= 1.2.22",
+    "stsci.imagestats >= 1.6.3",
+    "drizzle >= 1.15.0",
+    "webbpsf >= 1.2.1",
+]
+dynamic = [
+    "version",
+]
+
+[project.license]
+file = "LICENSE"
+
+[project.optional-dependencies]
+docs = [
+    "matplotlib",
+    "sphinx",
+    "sphinx-astropy",
+    "sphinx-automodapi",
+    "sphinx-rtd-theme",
+    "stsci-rtd-theme",
+    "sphinx-autobuild",
+    "tomli; python_version <=\"3.11\"",
+]
+test = [
+    "ci-watson >=0.5.0",
+    "pytest >8.0.0",
+    "pytest-astropy >= 0.11.0",
+    "deepdiff",
+    "stpreview>=0.5.1",
+]
+dev = [
+    "romancal[docs,test]",
+    "tox > 4",
+    "pre-commit > 3",
+]
+sdp = [
+    "stpreview>=0.5.1",
+]
+
+[project.urls]
+tracker = "https://github.com/spacetelescope/romancal/issues"
+documentation = "https://roman-pipeline.readthedocs.io/en/stable/"
+repository = "https://github.com/spacetelescope/romancal"
+
+[project.entry-points."stpipe.steps"]
+romancal = "romancal.stpipe.integration:get_steps"
+
+[project.entry-points.pytest11]
+webbpsf = "pytest_plugin.webbpsf_plugin"
+
+[project.scripts]
+roman_static_preview = "romancal.scripts.static_preview:command"
+okify_regtests = "romancal.scripts.okify_regtests:main"
+schema_editor = "romancal.scripts.schema_editor:main"
+schemadoc = "romancal.scripts.schemadoc:main"
+verify_install_requires = "romancal.scripts.verify_install_requires:main"
+asn_from_list = "romancal.associations.asn_from_list:Main"
+skycell_asn = "romancal.associations.skycell_asn:Main"
+
+[build-system]
+requires = [
+    "setuptools >=60",
+    "setuptools_scm[toml] >=3.4",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+
+[tool.setuptools.package-data]
+# package_data values are glob patterns relative to each specific subpackage.
+"*" = [
+    "**/*.fits",
+    "**/*.txt",
+    "**/*.inc",
+    "**/*.cfg",
+    "**/*.csv",
+    "**/*.yaml",
+    "**/*.json",
+    "**/*.asdf",
+]
+
+[tool.pytest.ini_options]
+minversion = 4.6
+norecursedirs = [
+    "docs/_build",
+    "romancal/scripts",
+    ".tox",
+    ".eggs",
+    "build",
+]
+filterwarnings = [
+    "error::ResourceWarning",
+]
+junit_family = "xunit2"
+inputs_root = "roman-pipeline"
+results_root = "roman-pipeline-results/regression-tests/runs/"
+doctest_plus = "enabled"
+doctest_rst = "enabled"
+text_file_format = "rst"
+log_cli_level = "info"
+addopts = [
+    "--doctest-ignore-import-errors",
+    "--color=yes",
+]
+markers = [
+    "soctests: run only the SOC tests in the suite.",
+]
+
+[tool.coverage.run]
+omit = [
+    "romancal/regtest/conftest.py",
+    "romancal/setup.py",
+    "romancal/tests/test*",
+    "romancal/regtest/test*",
+    "romancal/*/tests/*",
+    "docs/*",
+    "*/romancal/regtest/conftest.py",
+    "*/romancal/setup.py",
+    "*/romancal/tests/test*",
+    "*/romancal/regtest/test*",
+    "*/romancal/*/tests/*",
+    "*/docs/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if self.debug:",
+    "except ImportError",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == \"__main__\":",
+]
+
+[tool.bandit]
+skips = [
+    "B101",
+    "B307",
+    "B404",
+    "B603",
+]
+exclude_dirs = [
+    "romancal/regtest/scripts",
+]
+
+[tool.isort]
+profile = "black"
+filter_files = true
+line_length = 88
+
+[tool.black]
+line-length = 88
+force-exclude = "^/(\n  (\n      \\.eggs\n    | \\.git\n    | \\.pytest_cache\n    | \\.tox\n  )/\n)\n"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+exclude = [
+    "jdocs",
+    ".tox",
+    ".eggs",
+    "build",
+]
+ignore = [
+    "E741", # ambiguous variable name
+]
+extend-select = [
+    "NPY",
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"romancal/associations/__init__.py" = [
+    "E402",
+]
+
+[tool.cibuildwheel.macos]
+archs = [
+    "x86_64",
+    "arm64",
+]
+
+[tool.cibuildwheel.linux]
+archs = [
+    "auto",
+    "aarch64",
+]
+
+[tool.towncrier]
+filename = "CHANGES.rst"
+directory = "changes"
+package = "romancal"
+title_format = "{version} ({project_date})"
+ignore = [".gitkeep"]
+wrap = true
+issue_format = "`#{issue} <https://github.com/spacetelescope/romancal/issues/{issue}>`_"
+
+[[tool.towncrier.type]]
+directory = "general"
+name = "General"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Documentation"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "stpipe"
+name = "``stpipe``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "associations"
+name = "Associations"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "scripts"
+name = "Scripts"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "mosaic_pipeline"
+name = "``mosaic_pipeline``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "patch_match"
+name = "``patch_match``"
+showcontent = true
+
+# steps
+
+[[tool.towncrier.type]]
+directory = "dq_init"
+name = "``dq_init`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "saturation"
+name = "``saturation`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "refpix"
+name = "``refpix`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "linearity"
+name = "``linearity`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "dark_current"
+name = "``dark_current`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "jump_detection"
+name = "``jump_detection``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "ramp_fitting"
+name = "``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "assign_wcs"
+name = "``assign_wcs`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "flatfield"
+name = "``flatfield`` (WFI-Image)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "photom"
+name = "``photom`` (WFI-Image)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "flux"
+name = "``flux``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "source_detection"
+name = "``source_detection`` (WFI-Image)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "tweakreg"
+name = "``tweakreg`` (WFI-Image)"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "skymatch"
+name = "``skymatch``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "outlier_detection"
+name = "``outlier_detection``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "resample"
+name = "``resample``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "source_catalog"
+name = "``source_catalog``"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "multiband_catalog"
+name = "``multiband_catalog``"
+showcontent = true
