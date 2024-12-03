@@ -1,7 +1,11 @@
 from pathlib import Path
+import sys
 
 import pandas as pd
 import requests
+import os
+
+# import lephare
 
 # date of the file
 DEFAULT_FILE_DATE = "20210614"
@@ -65,7 +69,7 @@ def read_effarea_file(filename: str = "", **kwargs) -> pd.DataFrame:
     return df
 
 
-def create_filter_files(data: pd.DataFrame, filepath: str = "") -> None:
+def create_files(data: pd.DataFrame, filepath: str = "") -> None:
     """
     Create filter files from the provided DataFrame. Each filter file contains
     wavelength and filter data, with a comment line at the top.
@@ -77,11 +81,15 @@ def create_filter_files(data: pd.DataFrame, filepath: str = "") -> None:
     filepath : str, optional
         The path where the filter files will be saved. If not provided, the current directory will be used.
     """
-    path = Path(".").resolve() if filepath is None else Path(filepath).resolve()
+    path = create_path(filepath)
     wave = data.columns[0]
+    # Roman phot parameters
+    filter_list: list = []
+    filter_rep = path
+
     for col in data.columns[1:]:
         output_data = data[[wave, col]]
-        # convert wavelength unit from um to A
+        # convert wavelength from um to A
         output_data[wave] = output_data[wave] * 1e4
         filename = "roman" + "_".join(col.split(" ")).strip() + ".pb"
         first_line = f"# {col} (Roman filter info obtained from {BASE_URL.format(DEFAULT_FILE_DATE)})"
@@ -89,14 +97,77 @@ def create_filter_files(data: pd.DataFrame, filepath: str = "") -> None:
         with open(fq_path, "w") as f:
             f.write(first_line + "\n")
             output_data.to_csv(f, sep=" ", index=False, header=False, mode="a")
+        filter_list.append(filename)
+
+    # create phot.par file to be used with the filter command
+    create_roman_phot_par_file(filter_list, filter_rep)
+
+
+def create_roman_phot_par_file(filter_list: list, filter_rep: Path) -> None:
+    f_list: str = ",".join(filter_list)
+    f_calib: str = ",".join(len(filter_list) * ["0"])
+    f_rep: str = (
+        f"{filter_rep.as_posix()}  # Repository in which the filters are stored"
+    )
+    content = f"""
+    ##############################################################################################
+    ###########                          FILTERS                                     #############
+    ##############################################################################################
+    FILTER_REP {f_rep}
+    FILTER_LIST {f_list}
+    TRANS_TYPE 1
+    FILTER_CALIB {f_calib}
+    FILTER_FILE filter_roman  # name of file with filters (-> $ZPHOTWORK/filt/)
+    """
+    filename = filter_rep / "roman_phot.par"
+    with open(filename, "w") as f:
+        f.write(content)
+
+
+def create_path(filepath: str = "") -> Path:
+    # default to save filter files locally
+    path = Path(".").resolve()
+    if lepharedir := os.environ.get("LEPHAREDIR", None):
+        # save files to the lephare dir
+        path = Path(lepharedir, "filt", "roman").resolve()
+    elif filepath is not None:
+        # save files to custom path
+        path = Path(filepath).resolve()
+    # create path if they don't exist
+    print("Creating directory structure...")
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def run_filter_command(config_file_path: str = "") -> None:
+    from lephare.filter import Filter
+
+    config_file = Path(config_file_path, "roman_phot.par").as_posix()
+    filter = Filter(config_file=config_file)
+    filter.run()
+
+
+def run(input_filename, input_path):
+    # create dataframe from file
+    data = read_effarea_file(filename=input_filename, header=1)
+    # format and create files to be used by rail+lephare
+    create_files(data=data, filepath=input_path)
+    # run filter command to create the filter file needed by rail+lephare
+    run_filter_command(config_file_path=input_path)
 
 
 if __name__ == "__main__":
 
-    # create dataframe from file
-    data = read_effarea_file(header=1)
+    # this module takes a filename as input containing
+    # the monocromatic effective area of each filter per column
+    # and creates one file for each filter as well as
+    # the final merged file expected by rail+lephare
 
-    # format and create files to be used by rail+lephare
-    create_filter_files(data=data)
+    # get path where the results will be saved to
+    input_path = sys.argv[1] if len(sys.argv) > 1 else ""
+    # get effective area filename
+    input_filename = sys.argv[2] if len(sys.argv) > 2 else ""
+
+    run(input_filename=input_filename, input_path=input_path)
 
     print("Done.")
