@@ -49,7 +49,8 @@ class RomanCatalogProcess:
             os.path.join(lp.LEPHAREDIR, "examples/COSMOS.in"), format="ascii"
         )[: self.nobj]
 
-        # the example file is in the historical lephare format.
+        # loop over the filters we want to keep to get
+        # the number of the filter, n, and the name, b
         for n, b in enumerate(bands):
             flux = cosmos[cosmos.colnames[1 + 2 * n]]
             flux_err = cosmos[cosmos.colnames[2 + 2 * n]]
