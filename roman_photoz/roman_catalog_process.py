@@ -318,35 +318,9 @@ class RomanCatalogProcess:
         if save_results:
             self.save_results(output_filename=output_filename, output_path=output_path)
 
-    @property
-    def informer_model_exists(self):
-        """
-        Check if the informer model file exists.
 
-        Returns
-        -------
-        bool
-            True if the model file exists, False otherwise.
-        """
-        if os.path.exists(self.informer_model_path):
-            print(
-                f"The informer model file {self.informer_model_path} exists. Using it..."
-            )
-            return True
-        return False
+def main():
 
-
-def _get_parser():
-    """
-    Create and return the argument parser for the roman_photoz command-line interface.
-
-    This function is used by both the main function and the Sphinx documentation.
-
-    Returns
-    -------
-    argparse.ArgumentParser
-        The configured argument parser
-    """
     parser = argparse.ArgumentParser(description="Process Roman catalog data.")
     parser.add_argument(
         "--config_filename",
@@ -395,21 +369,13 @@ def _get_parser():
     return parser
 
 
-def main(argv=None):
+def main():
     """
     Main function to process Roman catalog data.
-
-    Parameters
-    ----------
-    argv : list, optional
-        List of command-line arguments.
     """
-    if argv is None:
-        # skip the first argument (script name)
-        argv = sys.argv[1:]
 
     parser = _get_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args()
 
     try:
         logger.info("Starting Roman catalog processing")
