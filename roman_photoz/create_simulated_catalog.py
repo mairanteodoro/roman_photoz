@@ -38,8 +38,6 @@ class SimulatedCatalog:
         A dictionary to store the data.
     lephare_config : dict
         Configuration for LePhare.
-    nobj : int
-        Maximum number of objects to process from input catalog.
     flux_cols : list
         List of flux columns.
     flux_err_cols : list
@@ -62,13 +60,11 @@ class SimulatedCatalog:
         """
         self.data = OrderedDict()
         self.lephare_config = ROMAN_DEFAULT_CONFIG
-        self.nobj = 100
         self.flux_cols = []
         self.flux_err_cols = []
         self.inform_stage = None
         self.estimated = None
         self.filter_lib = None
-        self.simulated_data_filename = ""
         self.simulated_data = None
         self.roman_catalog_template = self.read_roman_template_catalog()
 
@@ -140,10 +136,12 @@ class SimulatedCatalog:
             If the LePhare preparation fails or the configuration is invalid.
         """
         star_overrides = {}
-        qso_overrides = {}
+        qso_overrides = {
+            "MOD_EXTINC": "0,1000",
+            "EB_V": "0.,0.1,0.2,0.3",
+            "EXTINC_LAW": "SB_calzetti.dat",
+        }
         gal_overrides = {
-            "GAL_LIB_IN": "LIB_CE",
-            "GAL_LIB_OUT": "ROMAN_SIMULATED_MAGS",
             "GAL_SED": f"{LEPHAREDIR}/examples/COSMOS_MOD.list",
             "LIB_ASCII": "YES",
         }
@@ -163,12 +161,14 @@ class SimulatedCatalog:
         self,
         output_filename: str = DEFAULT_OUTPUT_CATALOG_FILENAME,
         output_path: str = "",
+        nobj: int = 100,
     ):
         """
         Create a simulated input catalog from the simulated data.
         """
+        fname = self.lephare_config['GAL_LIB_OUT']
         catalog_name = Path(
-            LEPHAREWORK, "lib_mag", f"{self.simulated_data_filename}.dat"
+            LEPHAREWORK, "lib_mag", f"{fname}.dat"
         ).as_posix()
         colnames = self.create_header(catalog_name=catalog_name)
 
@@ -183,16 +183,14 @@ class SimulatedCatalog:
             if "mag" in name or "redshift" in name
         ]
 
-        # we're matching the number of objects in the template
-        num_lines = len(self.roman_catalog_template.source_catalog)
-        random_lines = self.pick_random_lines(num_lines)
+        random_lines = self.pick_random_lines(nobj)
         catalog = random_lines[cols_to_keep]
 
         final_catalog = self.add_error(catalog)
         final_catalog = self.add_ids(final_catalog)
 
-        context = np.full((num_lines), 0)
-        # zspec = np.full((num_lines), np.nan)
+        context = np.full((nobj), 0)
+        # zspec = np.full((nobj), np.nan)
         zspec = final_catalog["redshift"]
         string_data = final_catalog["redshift"]
 
@@ -377,9 +375,7 @@ class SimulatedCatalog:
             )
             if "mag" in col:
                 # add error
-                new_catalog[f"{col}_err"] = np.abs(
-                    rng.normal(loc=0, scale=mag_err, size=catalog[col].shape)
-                )
+                new_catalog[f"{col}_err"] = mag_noise
 
         return new_catalog
 
@@ -404,13 +400,13 @@ class SimulatedCatalog:
             .split(",")
         )
         with open(catalog_name) as f:
-            # BEWARE of the format of LAPHEREWORK/lib_mag/ROMAN_SIMULATED_MAGS.dat!
+            # BEWARE of the format of LAPHEREWORK/lib_mag/*_COSMOS.dat!
             # ignore the first N_filt lines in the file
-            # for _ in range(len(filter_list) + 1):
-            #     next(f)
+            for _ in range(len(filter_list) + 1):
+                next(f)
             colname_list = f.readline().strip().split(" ")
-        colnames = [x for x in colname_list if "vector" not in x]
-        colvector = [x for x in colname_list if "vector" in x]
+        colnames = [x for x in colname_list if "[N_filt]" not in x]
+        colvector = [x for x in colname_list if "[N_filt]" in x]
         expanded_colvector = [
             x.replace("vector", filter_name)
             for x in colvector
@@ -419,7 +415,6 @@ class SimulatedCatalog:
         colnames.extend(expanded_colvector)
 
         colnames = [x for x in colnames if "#" not in x]
-        colnames = [x for x in colnames if "age" not in x]
         return colnames
 
     def pick_random_lines(self, num_lines: int):
@@ -455,6 +450,7 @@ class SimulatedCatalog:
         self,
         output_path: str = "",
         output_filename: str = DEFAULT_OUTPUT_CATALOG_FILENAME,
+        nobj=100,
     ):
         """
         Run the process to create the simulated catalog.
@@ -462,8 +458,7 @@ class SimulatedCatalog:
         self.get_filters()
         self.create_simulated_data()
         self.create_simulated_input_catalog(
-            output_filename=output_filename,
-            output_path=output_path,
+            output_filename=output_filename, output_path=output_path, nobj=nobj,
         )
 
         logger.info("DONE")
@@ -487,13 +482,14 @@ if __name__ == "__main__":
             default=DEFAULT_OUTPUT_CATALOG_FILENAME,
             help="Filename for the output catalog.",
         )
+        parser.add_argument(
+            '--nobj', type=int, default=100,
+            help='Number of objects to simulate.')
         return parser.parse_args()
 
     args = parse_args()
 
     logger.info("Starting simulated catalog creation...")
     rcp = SimulatedCatalog()
-    rcp.process(args.output_path, args.output_filename)
+    rcp.process(args.output_path, args.output_filename, nobj=args.nobj)
     logger.info("Simulated catalog creation completed successfully")
-
-    logger.info("Done.")

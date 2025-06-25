@@ -205,8 +205,8 @@ class RomanCatalogProcess:
             model=self.informer_model_path,
             hdf5_groupname="",
             lephare_config=self.config,
-            star_config=None,
-            qso_config=None,
+            # star_config=None,
+            # qso_config=None,
             bands=self.flux_cols,
             err_bands=self.flux_err_cols,
             ref_band=self.flux_cols[0],
@@ -242,8 +242,8 @@ class RomanCatalogProcess:
             ref_band=self.flux_cols[0],
             output_keys=self.default_roman_output_keys,
             lephare_config=self.config,
-            star_config=None,
-            qso_config=None,
+            # star_config=None,
+            # qso_config=None,
         )
 
         self.estimated = estimate_lephare.estimate(self.data)

@@ -35,8 +35,8 @@ dependencies = [
     "drizzle >= 1.15.0",
     "webbpsf >= 1.2.1",
     # "pz-rail-lephare",
-    "pz-rail-lephare @ git+https://git@github.com/mairanteodoro/rail_lephare.git",
-    "lephare == 0.1.13",
+    "pz-rail-lephare == 1.1.1",
+    "lephare == 0.1.15",
 ]
 license-files = ["LICENSE"]
 dynamic = ["version"]
