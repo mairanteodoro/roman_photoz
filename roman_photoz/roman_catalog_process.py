@@ -205,8 +205,6 @@ class RomanCatalogProcess:
             model=self.informer_model_path,
             hdf5_groupname="",
             lephare_config=self.config,
-            # star_config=None,
-            # qso_config=None,
             bands=self.flux_cols,
             err_bands=self.flux_err_cols,
             ref_band=self.flux_cols[0],
@@ -242,8 +240,6 @@ class RomanCatalogProcess:
             ref_band=self.flux_cols[0],
             output_keys=self.default_roman_output_keys,
             lephare_config=self.config,
-            # star_config=None,
-            # qso_config=None,
         )
 
         self.estimated = estimate_lephare.estimate(self.data)
@@ -319,7 +315,34 @@ class RomanCatalogProcess:
             self.save_results(output_filename=output_filename, output_path=output_path)
 
 
-def main():
+    @property
+    def informer_model_exists(self):
+        """
+        Check if the informer model file exists.
+
+        Returns
+        -------
+        bool
+            True if the model file exists, False otherwise.
+        """
+        if os.path.exists(self.informer_model_path):
+            print(
+                f"The informer model file {self.informer_model_path} exists. Using it..."
+            )
+            return True
+        return False
+
+def _get_parser():
+    """
+    Create and return the argument parser for the roman_photoz command-line interface.
+
+    This function is used by both the main function and the Sphinx documentation.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The configured argument parser
+    """
 
     parser = argparse.ArgumentParser(description="Process Roman catalog data.")
     parser.add_argument(

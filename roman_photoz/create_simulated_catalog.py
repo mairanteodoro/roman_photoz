@@ -10,6 +10,7 @@ import numpy as np
 from numpy.lib import recfunctions as rfn
 from rail.core.stage import RailStage
 from roman_datamodels import datamodels as rdm
+from astropy import table
 
 from roman_photoz import create_roman_filters
 from roman_photoz.default_config_file import default_roman_config
@@ -175,6 +176,7 @@ class SimulatedCatalog:
         self.simulated_data = np.genfromtxt(
             catalog_name, dtype=None, names=colnames, encoding="utf-8"
         )
+        import pdb; pdb.set_trace()
 
         # we're keeping only the columns with magnitude and true redshift information
         cols_to_keep = [
@@ -189,8 +191,7 @@ class SimulatedCatalog:
         final_catalog = self.add_error(catalog)
         final_catalog = self.add_ids(final_catalog)
 
-        context = np.full((nobj), 0)
-        # zspec = np.full((nobj), np.nan)
+        context = np.full(nobj, 0)
         zspec = final_catalog["redshift"]
         string_data = final_catalog["redshift"]
 
@@ -223,6 +224,10 @@ class SimulatedCatalog:
         catalog : np.ndarray
             The catalog data to update the Roman catalog template with.
         """
+        # Create a new table with the correct number of rows using zeros
+        new_table = table.Table(
+            np.zeros(len(catalog), dtype=self.roman_catalog_template.source_catalog.dtype))
+        self.roman_catalog_template.source_catalog = new_table
         filter_list = (
             default_roman_config["FILTER_LIST"]
             .replace("roman/roman_", "")
@@ -333,7 +338,7 @@ class SimulatedCatalog:
         return new_catalog
 
     def add_error(
-        self, catalog, mag_noise: float = 0.1, mag_err: float = 0.01, seed: int = 42
+        self, catalog, mag_noise: float = 0.1, seed: int = 42
     ):
         """
         Add a Gaussian error to each magnitude column in the catalog.
@@ -342,7 +347,7 @@ class SimulatedCatalog:
 
         + a Gaussian noise with a mean equal to the original value and a standard deviation of `mag_noise`
 
-        + an error column (`<magnitude_column>_err`) with values sampled from a Gaussian distribution with a mean of 0 and a standard deviation of `mag_err`.
+        + an error column (`<magnitude_column>_err`) with values set to `mag_noise`.
 
         Parameters
         ----------
@@ -350,8 +355,6 @@ class SimulatedCatalog:
             The catalog data.
         mag_noise : float, optional
             The standard deviation of the Gaussian noise to be added to the observed magnitudes (default: 0.1).
-        mag_err : float, optional
-            The standard deviation of the Gaussian noise to be added to the error columns (default: 0.01).
         seed : int, optional
             The seed for the random number generator.
 
@@ -408,13 +411,14 @@ class SimulatedCatalog:
         colnames = [x for x in colname_list if "[N_filt]" not in x]
         colvector = [x for x in colname_list if "[N_filt]" in x]
         expanded_colvector = [
-            x.replace("vector", filter_name)
+            x.replace("N_filt", filter_name)
             for x in colvector
             for filter_name in filter_list
         ]
         colnames.extend(expanded_colvector)
 
         colnames = [x for x in colnames if "#" not in x]
+        import pdb; pdb.set_trace()
         return colnames
 
     def pick_random_lines(self, num_lines: int):
