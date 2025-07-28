@@ -1,8 +1,6 @@
 #!/bin/bash
 
-filter_list=${1}
-pids=()
-for filter in "${filter_list[@]}"; do
+for filter in $@; do
   echo "Processing filter: $filter"
   # spawn background processes for each filter
   romanisim-make-image \
@@ -18,10 +16,6 @@ for filter in "${filter_list[@]}"; do
     --rng_seed 1 \
     --drop-extra-dq \
     "r0000101001001001001_0001_{}_{bandpass}_uncal.asdf" &
-  pids+=($!)
 done
 
-# wait for all background processes to finish
-for pid in "${pids[@]}"; do
-  wait "$pid"
-done
+wait

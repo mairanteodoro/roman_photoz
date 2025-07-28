@@ -38,48 +38,45 @@ romanisim_input_catalog.ecsv --flux-catalog roman_simulated_catalog.parquet
 
 ## 4. Generate Simulated Images
 
-- **Command:** `./run_romanisim.sh "${filter_list}"`
+- **Command:** `./run_romanisim.sh F062 F087 F106 F129 F158 F184 F213
 - **Description:** Runs Romanisim to generate simulated images for all specified
   filters using the updated catalog.
 
 ## 5. Create Association Files for ELP and Run ELP
 
-- **Commands:** `./create_asn_files_for_elp.sh "${filter_list}"`
-  `./run_elp.sh`
+- **Commands:** `./create_asn_files_for_elp.sh F062 F087 F106 F129 F158 F184 F213`
+  `./run_elp.sh *_uncal.json`
 - **Description:** Prepares association files for the ELP pipeline for each
   filter and executes the ELP pipeline.
 
 ## 6. Create Association Files for Skycells
 
-- **Command:** `./create_skycell_asn.sh "${filter_list}"`
+- **Command:** `./create_skycell_asn.sh F062 F087 F106 F129 F158 F184 F213
 - **Description:** Generates association files for skycell-based processing for
   all filters.
 
 ## 7. Run MOS Pipeline
 
-- **Command:** `./run_mos.sh ${skycell_id}`
-- **Description:** Runs the MOS pipeline for the selected skycell, using the
+- **Command:** `./run_mos.sh r00001_p_*asn.json`
+- **Description:** Runs the MOS pipeline for the skycells, using the
   previously generated association files.
+  Note: will run 42 simultaneous coadds as written!
 
 ## 8. Create Association Files for Multiband Catalog
 
-- **Command:** `./create_asn_for_mbandcatalog.sh ${skycell_id}`
+- **Command:** `./create_asn_for_mbandcatalog.sh *_coadd.asdf`
 - **Description:** Prepares association files for multiband catalog generation
   for the selected skycell.
 
 ## 9. Run Multiband Catalog Step
 
-- **Command:** `strun romancal.step.MultibandCatalogStep
-mbcat_${skycell_id}_wfi01.json --deblend True --fit_psf False`
+- **Command:** `find mbcat_*_wfi01.json | xargs -n1 -P8 -I{} strun romancal.step.MultibandCatalogStep {} --snr_threshold 5`
 - **Description:** Executes the MultibandCatalogStep to produce the final
-  multiband catalog for the skycell, with deblending enabled and PSF fitting
-  disabled.
+  multiband catalog for the skycell.
 
 ## 10. Run roman-photoz
 
-- **Command:** `roman-photoz --input-path . --input-filename
-r0000101001001001001_0001_wfi01_cat.parquet --output-path . --output-filename
-result.parquet`
+- **Command:** `find 270*_cat.parquet | xargs -I{} -P8 -n1 roman-photoz --input-path . --input-filename {} --output-path . --output-filename {}.photoz.parquet`  # we should update this to put the photoz information in the input multiband catalogs
 - **Description:** Runs the Roman Photo-z pipeline on the generated catalog to
   estimate photometric redshifts.
 
