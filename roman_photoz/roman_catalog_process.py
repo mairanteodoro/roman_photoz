@@ -176,8 +176,6 @@ class RomanCatalogProcess:
             model=self.informer_model_path,
             hdf5_groupname="",
             lephare_config=self.config,
-            star_config=None,
-            qso_config=None,
             bands=self.flux_cols,
             err_bands=self.flux_err_cols,
             ref_band=self.flux_cols[0],
@@ -213,8 +211,6 @@ class RomanCatalogProcess:
             ref_band=self.flux_cols[0],
             output_keys=self.default_roman_output_keys,
             lephare_config=self.config,
-            star_config=None,
-            qso_config=None,
         )
 
         self.estimated = estimate_lephare.estimate(self.data)
@@ -313,6 +309,7 @@ class RomanCatalogProcess:
                 output_format=output_format,
             )
 
+
     @property
     def informer_model_exists(self):
         """
@@ -349,7 +346,7 @@ class RomanCatalogProcess:
         return Path(informer_path, self.model_filename).as_posix()
 
 
-def main():
+def _get_parser():
     """
     Main function to process Roman catalog data using command-line arguments.
     This function parses command-line arguments for input/output files, configuration,
@@ -419,6 +416,15 @@ def main():
         default="segment_{}_flux_err",
         help="Template for the column name containing the error corresponding to fit_colname. It should contain a pair of curly braces as a placeholder for the filter ID, e.g., 'segment_{}_flux_err'.",
     )
+    return parser
+
+
+def main():
+    """
+    Main function to process Roman catalog data.
+    """
+
+    parser = _get_parser()
     args = parser.parse_args()
 
     try:
