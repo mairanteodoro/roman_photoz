@@ -129,52 +129,6 @@ class TestRomanCatalogHandler:
             roman_catalog_handler.catalog["zspec"][1] == mock_catalog_data["zspec"][1]
         )
 
-    @patch("roman_photoz.roman_catalog_handler.RomanCatalogHandler.read_catalog")
-    @patch("roman_photoz.roman_catalog_handler.RomanCatalogHandler.format_catalog")
-    def test_process(
-        self,
-        mock_format_catalog,
-        mock_read_catalog,
-        mock_catalog_data,
-    ):
-        """Test processing a catalog"""
-        # Setup - create handler without filename so it doesn't auto-read
-        handler = RomanCatalogHandler()
-        handler.cat_name = TEST_CATALOG_NAME
-        handler.cat_array = None  # Force read_catalog to be called
-        handler.catalog = None  # Force format_catalog to be called
-
-        # Mock return values
-        mock_read_catalog.return_value = mock_catalog_data
-        mock_format_catalog.return_value = None
-
-        # Execute
-        result = handler.process()
-
-        # Check that methods were called
-        mock_read_catalog.assert_called_once()
-        mock_format_catalog.assert_called_once()
-
-        # Check that process returns the catalog
-        assert result is handler.catalog
-
-    @patch("astropy.table.Table.read")
-    def test_end_to_end_process(self, mock_catalog_data, tmp_path):
-        """Test the entire process flow from read to format"""
-        catalog_name = tmp_path / TEST_CATALOG_NAME
-        mock_catalog_data.write(catalog_name, format="parquet")
-        handler = RomanCatalogHandler(catalog_name)
-
-        # Process the catalog
-        result = handler.process()
-
-        # Check that the catalog was processed correctly
-        assert result is not None
-        assert "label" in result.dtype.names
-        assert "context" in result.dtype.names
-        assert "zspec" in result.dtype.names
-        assert "string_data" in result.dtype.names
-
 
 if __name__ == "__main__":
     pytest.main(["-v", "test_roman_catalog_handler.py"])

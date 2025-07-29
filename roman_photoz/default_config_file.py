@@ -53,7 +53,7 @@ default_roman_config = {
     "GAL_LIB_OUT": "ROMAN_SIMULATED_MAGS",
     "GAL_SED": f"{LEPHAREDIR}/examples/COSMOS_MOD.list",
     "GLB_CONTEXT": "0",
-    "INP_TYPE": "M",
+    "INP_TYPE": "F",
     "LIB_ASCII": "YES",
     "LIMITS_MAPP_CUT": "90",
     "LIMITS_MAPP_REF": "1",

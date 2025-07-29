@@ -151,22 +151,6 @@ class RomanCatalogHandler:
         logger.info("Catalog read successfully")
         return cat_array
 
-    def process(self):
-        """
-        Process the catalog by reading and formatting it.
-
-        Returns
-        -------
-        np.ndarray
-            The formatted catalog.
-        """
-        if self.cat_array is None:
-            self.cat_array = self.read_catalog()
-        if self.catalog is None or len(self.catalog) == 0:
-            self.catalog = np.empty(0, dtype=[])
-            self.format_catalog()
-        return self.catalog
-
 
 if __name__ == "__main__":
     data_path = Path(__file__).parent / "data"
