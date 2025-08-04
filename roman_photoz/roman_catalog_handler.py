@@ -57,13 +57,11 @@ class RomanCatalogHandler:
         logger.info("Formatting catalog...")
         # Initialize catalog if it's empty or None
         if self.catalog is None or len(self.catalog) == 0:
-            self.catalog = np.empty(len(self.cat_array), dtype=[])
+            self.catalog = Table()
 
         # Only add label if it's not already present
         if "label" not in self.catalog.dtype.names:
-            self.catalog = rfn.append_fields(
-                self.catalog, "label", self.cat_array["label"]
-            )
+            self.catalog['label'] = self.cat_array['label']
 
         for filter_id in self.filter_names:
             # Roman filter ID in format "fNNN"
@@ -85,51 +83,13 @@ class RomanCatalogHandler:
 
             # Only add fields if they don't already exist
             if fit_colname not in self.catalog.dtype.names:
-                self.catalog = rfn.append_fields(
-                    self.catalog,
-                    fit_colname,
-                    value,
-                )
+                self.catalog[fit_colname] = value
+
             if fit_err_colname not in self.catalog.dtype.names:
-                self.catalog = rfn.append_fields(
-                    self.catalog,
-                    fit_err_colname,
-                    error,
-                )
-        # populate additional required columns only if they don't exist
-        if "context" not in self.catalog.dtype.names:
-            self.catalog = rfn.append_fields(
-                self.catalog,
-                "context",
-                (
-                    self.cat_array["context"]
-                    if "context" in self.cat_array.dtype.names
-                    else np.zeros(len(self.cat_array), dtype=int)
-                ),
-                usemask=False,
-            )
-        if "zspec" not in self.catalog.dtype.names:
-            self.catalog = rfn.append_fields(
-                self.catalog,
-                "zspec",
-                (
-                    self.cat_array["zspec"]
-                    if "zspec" in self.cat_array.dtype.names
-                    else np.zeros(len(self.cat_array), dtype=int)
-                ),
-                usemask=False,
-            )
-        if "string_data" not in self.catalog.dtype.names:
-            self.catalog = rfn.append_fields(
-                self.catalog,
-                "string_data",
-                (
-                    self.cat_array["string_data"]
-                    if "string_data" in self.cat_array.dtype.names
-                    else np.full(len(self.cat_array), "")
-                ),
-                usemask=False,
-            )
+                self.catalog[fit_err_colname] = error
+
+        if "redshift" not in self.catalog.dtype.names:
+            self.catalog['redshift'] = np.zeros(len(self.catalog), dtype='f4')
 
         logger.info("Catalog formatting completed")
 

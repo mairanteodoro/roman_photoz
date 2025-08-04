@@ -174,7 +174,6 @@ class SimulatedCatalog:
         self.simulated_data = np.genfromtxt(
             catalog_name, dtype=None, names=colnames, encoding="utf-8"
         )
-        import pdb; pdb.set_trace()
 
         # we're keeping only the columns with magnitude and true redshift information
         cols_to_keep = [
@@ -416,7 +415,6 @@ class SimulatedCatalog:
         colnames.extend(expanded_colvector)
 
         colnames = [x for x in colnames if "#" not in x]
-        import pdb; pdb.set_trace()
         return colnames
 
     def pick_random_lines(self, num_lines: int):

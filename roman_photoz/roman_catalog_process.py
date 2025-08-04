@@ -427,22 +427,18 @@ def main():
     parser = _get_parser()
     args = parser.parse_args()
 
-    try:
-        logger.info("Starting Roman catalog processing")
-        rcp = RomanCatalogProcess(
-            config_filename=args.config_filename, model_filename=args.model_filename
-        )
-        rcp.process(
-            input_filename=args.input_filename,
-            input_path=args.input_path,
-            output_filename=args.output_filename,
-            output_path=args.output_path,
-            output_format=args.output_format,
-            save_results=args.save_results,
-            fit_colname=args.fit_colname,
-            fit_err_colname=args.fit_err_colname,
-        )
-        logger.info("Roman catalog processing completed")
-    except Exception as e:
-        logger.error(f"An error occurred during processing: {str(e)}")
-        sys.exit(1)
+    logger.info("Starting Roman catalog processing")
+    rcp = RomanCatalogProcess(
+        config_filename=args.config_filename, model_filename=args.model_filename
+    )
+    rcp.process(
+        input_filename=args.input_filename,
+        input_path=args.input_path,
+        output_filename=args.output_filename,
+        output_path=args.output_path,
+        output_format=args.output_format,
+        save_results=args.save_results,
+        fit_colname=args.fit_colname,
+        fit_err_colname=args.fit_err_colname,
+    )
+    logger.info("Roman catalog processing completed")
