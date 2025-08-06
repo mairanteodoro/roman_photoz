@@ -94,6 +94,6 @@ default_roman_config = {
     "ZPHOTLIB": "GAL_COSMOS",
     "Z_INTERP": "YES",
     "Z_METHOD": "BEST",
-    "Z_RANGE": "0.01,99.99",
+    "Z_RANGE": "0.0,99.99",
     "Z_STEP": "0.1,0.,7.0",
 }

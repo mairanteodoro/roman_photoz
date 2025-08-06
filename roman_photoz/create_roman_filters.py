@@ -91,6 +91,16 @@ def create_files(data: pd.DataFrame, filepath: str = "") -> None:
 
     for col in data.columns[1:]:
         output_data = data[[wave, col]]
+
+        # remove zero entries to speed computations
+        nonzero = np.flatnonzero(data[col] > 0)
+        start = np.min(nonzero)
+        stop = np.max(nonzero)
+        buf = 5
+        start = max([0, start - buf])
+        stop = min([len(data), stop + buf])
+        data = data[start:stop]
+
         # convert wavelength from um to A
         output_data.loc[:, wave] = output_data[wave] * 1e4
         filename = "roman" + "_".join(col.split(" ")).strip() + ".pb"

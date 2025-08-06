@@ -213,6 +213,7 @@ class RomanCatalogProcess:
             lephare_config=self.config,
         )
 
+        # dh = estimate_lephare.add_data('input', self.data)
         self.estimated = estimate_lephare.estimate(self.data)
 
     def save_results(
@@ -248,7 +249,7 @@ class RomanCatalogProcess:
 
         if output_format.lower() == "parquet":
             ancil_data = Table(ancil_data)
-            ancil_data.write(output_filename, format="parquet")
+            ancil_data.write(output_filename, format="parquet", overwrite=True)
         elif output_format.lower() == "asdf":
             tree = {"roman_photoz_results": ancil_data}
             with AsdfFile(tree) as af:

@@ -78,8 +78,8 @@ class RomanCatalogHandler:
                 # equivalent to use all the passbands for all the objects.
                 # However, the code checks the error and flux values.
                 # If both values are negative, the band is not used."
-                value = np.full(len(self.cat_array), -99, dtype=int)
-                error = np.full(len(self.cat_array), -99, dtype=int)
+                value = np.full(len(self.cat_array), -99, dtype=np.float32)
+                error = np.full(len(self.cat_array), -99, dtype=np.float32)
 
             # Only add fields if they don't already exist
             if fit_colname not in self.catalog.dtype.names:
@@ -87,6 +87,15 @@ class RomanCatalogHandler:
 
             if fit_err_colname not in self.catalog.dtype.names:
                 self.catalog[fit_err_colname] = error
+
+            # lephare expects fluxes in erg/s/cm^2/Hz
+            # we need to convert from nJy
+            # 10^-23 erg / s / ... = 1 Jy
+            # 10^-9 Jy = 1 nJy
+            # => 10^-32 erg / s / ... = 1 nJy
+            m = self.catalog[fit_err_colname] > 0
+            self.catalog[fit_colname][m] *= 10**-32
+            self.catalog[fit_err_colname][m] *= 10**-32
 
         if "redshift" not in self.catalog.dtype.names:
             self.catalog['redshift'] = np.zeros(len(self.catalog), dtype='f4')

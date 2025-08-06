@@ -112,7 +112,7 @@ class SimulatedCatalog:
             create_roman_filters.run()
 
         logger.info(
-            f"Created filter library using the filter files in {self.lephare_config['FILTER_REP']}/roman."
+                f"Using filter library in {self.lephare_config['FILTER_REP']}/roman."
         )
 
     def create_simulated_data(self):
@@ -127,6 +127,15 @@ class SimulatedCatalog:
         RuntimeError
             If the LePhare preparation fails or the configuration is invalid.
         """
+
+        fname = self.lephare_config['GAL_LIB_OUT']
+        catalog_name = Path(
+            LEPHAREWORK, "lib_mag", f"{fname}.dat"
+        ).as_posix()
+        if os.path.exists(catalog_name):
+            logger.info('LePhare synthetic magnitudes already exist, skipping creation.')
+            return
+
         star_overrides = {}
         qso_overrides = {
             "MOD_EXTINC": "0,1000",
@@ -187,6 +196,9 @@ class SimulatedCatalog:
 
         final_catalog = self.add_error(catalog)
         final_catalog = self.add_ids(final_catalog)
+
+        if nobj < 0:
+            nobj = len(catalog)
 
         context = np.full(nobj, 0)
         zspec = final_catalog["redshift"]
@@ -485,7 +497,7 @@ def main():
             help="Filename for the output catalog.",
         )
         parser.add_argument(
-            '--nobj', type=int, default=100,
+            '--nobj', type=int, default=-1,
             help='Number of objects to simulate.'
         )
         parser.add_argument(

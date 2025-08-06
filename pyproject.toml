@@ -20,8 +20,6 @@ dependencies = [
   "pyparsing >=2.4.7",
   "requests >=2.26",
   "scipy>=1.7.0",
-  "stpipe >=0.7.0",
-  "tweakwcs >=0.8.8",
   "pz-rail-lephare",
   "lephare",
 ]
@@ -46,10 +44,7 @@ test = [
   "pytest >8.0.0",
   "pytest-astropy >= 0.11.0",
   "deepdiff",
-  "stpreview>=0.5.1",
   "pytest-cov",
-  "romancal @ git+https://git@github.com/spacetelescope/romancal.git@main",
-  "romanisim @ git+https://git@github.com/mairanteodoro/romanisim.git@main",
 ]
 dev = ["roman_photoz[docs,test]", "tox > 4", "pre-commit > 3"]
 sdp = ["stpreview>=0.5.1"]
