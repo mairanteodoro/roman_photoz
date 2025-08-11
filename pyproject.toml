@@ -22,6 +22,8 @@ dependencies = [
   "scipy>=1.7.0",
   "pz-rail-lephare",
   "lephare",
+  "pyarrow >= 10.0.1",  # for Table.read(...) support in astropy for parquet files
+  "pandas >= 2.0.0",  # for Table.read(...) support in astropy for parquet files
 ]
 license-files = ["LICENSE"]
 dynamic = ["version"]
