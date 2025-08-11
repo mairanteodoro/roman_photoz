@@ -15,8 +15,6 @@ def create_random_catalog(table: Table, n: int, seed: int = 13):
 
 def update_fluxes(target_catalog: Table, flux_catalog: Table) -> Table:
     zero_point_flux = u.zero_point_flux(3631 * u.Jy)  # 1 maggy = 3631 Jy
-    for colname in flux_catalog.colnames:
-        flux_catalog.rename_column(colname, colname.replace("magnitude", "").upper())
 
     fudge_factor = 100
     # LePhare catalog magnitudes seem to peak out at an absolute galaxy magnitude of -15
@@ -25,15 +23,18 @@ def update_fluxes(target_catalog: Table, flux_catalog: Table) -> Table:
     # need to figure out what's the issue here.
 
     for colname in target_catalog.colnames:
-        if colname in flux_catalog.colnames:
-            # convert from m_AB (roman_simulated_catalog) to maggies (romanisim_input_catalog)
-            target_catalog[colname] = (flux_catalog[colname] * u.ABmag).to(
-                u.mgy, zero_point_flux
-            ) * fudge_factor
+        if colname not in ['F062', 'F087', 'F106', 'F129',
+                           'F154', 'F187', 'F213', 'F146']:
+            continue
+        fluxname = f'segment_{colname.lower()}_flux'
+        # convert from nJy (Roman  to maggies (romanisim_input_catalog)
+        target_catalog[colname] = (flux_catalog[fluxname]).to(
+            u.mgy, zero_point_flux
+        ) * fudge_factor
 
     # add source ID from roman_simulated_catalog
-    target_catalog["label"] = flux_catalog["LABEL"]
-    target_catalog["z_true"] = flux_catalog["Z_TRUE"]
+    target_catalog["label"] = flux_catalog["label"]
+    target_catalog["ztrue"] = flux_catalog["ztrue"]
 
     return target_catalog
 
@@ -93,8 +94,11 @@ if __name__ == "__main__":
             np.random.choice(len(romanisim_cat), nobj, replace=False)]
     rpz_cat = Table.read(roman_photoz_catalog_filename, format="parquet")
     # trim anything that is impossibly bright or faint
+    # ugly here that we have a lot of different kinds of magnitudes now
     minmag = np.min(
-        [rpz_cat[x] for x in rpz_cat.dtype.names if 'magnitude' in x], axis=0)
+        [-2.5*np.log10(rpz_cat[x])
+         for x in rpz_cat.dtype.names
+         if x.endswith('_flux') and x.startswith('segment')], axis=0)
     rpz_cat = rpz_cat[(minmag > 0) & (minmag < 33)]
     rpz_cat = create_random_catalog(table=rpz_cat, n=len(romanisim_cat))
 
