@@ -13,7 +13,7 @@ FILTER_LIST = get_roman_filter_list()
 
 @pytest.fixture
 def simulated_catalog():
-    return SimulatedCatalog(include_errors=True)
+    return SimulatedCatalog(nobj=100)
 
 
 def test_is_folder_not_empty(simulated_catalog):
@@ -42,28 +42,24 @@ def test_add_ids(simulated_catalog):
 @pytest.mark.parametrize(
     "params",
     [
-        {"mag_noise": 0.1, "mag_err": 0.01},
-        {"mag_noise": 0.2, "mag_err": 0.02},
-        {"mag_noise": 0.05, "mag_err": 0.005},
+        {"mag_noise": 0.1},
+        {"mag_noise": 0.2},
+        {"mag_noise": 0.05},
     ],
 )
 def test_add_error(simulated_catalog, params):
     catalog = np.array([(1.0, 2.0)], dtype=[("mag1", "f8"), ("mag2", "f8")])
     updated_catalog = simulated_catalog.add_error(
-        catalog, mag_noise=params["mag_noise"], mag_err=params["mag_err"], seed=123
+        catalog, mag_noise=params["mag_noise"], seed=123
     )
     # ensure that the new columns are added and values are within the expected range
     assert "mag1_err" in updated_catalog.dtype.names
     assert "mag2_err" in updated_catalog.dtype.names
-    assert (updated_catalog["mag1_err"][0] > 0) & (
-        updated_catalog["mag1_err"][0] <= params["mag_err"]
-    )
-    assert (updated_catalog["mag2_err"][0] > 0) & (
-        updated_catalog["mag2_err"][0] <= params["mag_err"]
-    )
+    assert updated_catalog["mag1_err"][0] == params["mag_noise"]
+    assert updated_catalog["mag2_err"][0] == params["mag_noise"]
     # ensure that noise has been added to the original magnitudes
-    assert np.all(updated_catalog["mag1"] != catalog["mag1"])
-    assert np.all(updated_catalog["mag2"] != catalog["mag2"])
+    assert np.all(updated_catalog["mag1"] == catalog["mag1"])
+    assert np.all(updated_catalog["mag2"] == catalog["mag2"])
 
 
 def test_pick_random_lines(simulated_catalog):

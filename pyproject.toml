@@ -47,6 +47,8 @@ test = [
   "pytest-astropy >= 0.11.0",
   "deepdiff",
   "pytest-cov",
+  "romancal @ git+https://git@github.com/spacetelescope/romancal.git@main",
+  "romanisim @ git+https://git@github.com/spacetelescope/romanisim.git@main",
 ]
 dev = ["roman_photoz[docs,test]", "tox > 4", "pre-commit > 3"]
 sdp = ["stpreview>=0.5.1"]
@@ -135,3 +137,4 @@ output = "coverage.xml"
 [project.scripts]
 roman-photoz = "roman_photoz.__main__:main"
 roman-photoz-create-simulated-catalog = "roman_photoz.create_simulated_catalog:main"
+roman-photoz-create-simulated-catalog-old = "roman_photoz.create_simulated_catalog_old:main"

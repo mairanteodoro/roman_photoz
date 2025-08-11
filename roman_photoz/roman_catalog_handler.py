@@ -8,6 +8,8 @@ from roman_datamodels import datamodels as rdm
 
 from roman_photoz.logger import logger
 from roman_photoz.utils import get_roman_filter_list
+import astropy.units as u
+import math
 
 
 class RomanCatalogHandler:
@@ -40,15 +42,12 @@ class RomanCatalogHandler:
         self.fit_err_colname = fit_err_colname
         self.cat_temp_filename = "cat_temp_file.csv"
         self.filter_names = get_roman_filter_list()
+        self.cat_array = None
+        self.catalog = None
 
         # Only read and format catalog if a filename is provided
         if catname:
-            self.cat_array = self.read_catalog()
-            self.catalog = np.empty(0, dtype=[])
-            self.format_catalog()
-        else:
-            self.cat_array = None
-            self.catalog = None
+            self.process()
 
     def format_catalog(self):
         """
@@ -120,6 +119,22 @@ class RomanCatalogHandler:
         logger.info("Catalog read successfully")
         return cat_array
 
+    def process(self):
+        """
+        Process the catalog by reading and formatting it.
+
+        Returns
+        -------
+        np.ndarray
+            The formatted catalog.
+        """
+        if self.cat_array is None:
+            self.cat_array = self.read_catalog()
+        if self.catalog is None or len(self.catalog) == 0:
+            self.catalog = np.empty(0, dtype=[])
+            self.format_catalog()
+        return self.catalog
+
 
 if __name__ == "__main__":
     data_path = Path(__file__).parent / "data"
@@ -132,4 +147,3 @@ if __name__ == "__main__":
         fit_colname="segment_{}_flux",
         fit_err_colname="segment_{}_flux_err",
     )
-    print("Done.")
