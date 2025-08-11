@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# requires that PYTHONPATH and PATH contain the roman_photoz/scripts directory.
+
 # stop on error
 set -e
 
@@ -38,8 +40,8 @@ find r00001_p*asn.json | xargs -I{} -P8 -n1 strun roman_mos {}
 create_asn_for_mbandcatalog.sh *_coadd.asdf
 
 # 9 - run MultibandCatalogStep
-find mbcat_*_wfi01.json | xargs -I{} -P8 -n1 strun romancal.step.MultibandCatalogStep {} --snr_threshold 10
+find mbcat_*_wfi01.json | xargs -I{} -P8 -n1 strun romancal.step.MultibandCatalogStep {} --snr_threshold 5
 
 # 10 - run roman_photoz
 # can't run in pxarallel because the files overwrite themselves.
-find 270*_cat.parquet | xargs -I{} -P1 -n1 roman-photoz --input-path . --input-filename {} --output-path . --output-filename {}.photoz.parquet
+find 270*_cat.parquet | xargs -I{} -P8 -n1 roman-photoz --input-filename {}
