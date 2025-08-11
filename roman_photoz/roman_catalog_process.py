@@ -6,6 +6,7 @@ import sys
 from collections import OrderedDict
 from pathlib import Path
 from typing import Union
+import tempfile
 
 import lephare as lp
 import numpy as np
@@ -209,8 +210,13 @@ class RomanCatalogProcess:
             model = self.informer_model_path
         else:
             model = self.inform_stage.get_handle("model")
+
+        tf = tempfile.NamedTemporaryFile(prefix='output_estimate_lephare', suffix='.hdf5', delete=True,
+                                         dir='.')
+        self.tempfile = tf  # keep in memory until this object goes out of scope, then delete?
+        stagename = os.path.basename(os.path.splitext(tf.name)[0])[7:]
         estimate_lephare = LephareEstimator.make_stage(
-            name="estimate_roman",
+            name=stagename,
             nondetect_val=np.nan,
             model=model,
             hdf5_groupname="",
@@ -280,9 +286,15 @@ class RomanCatalogProcess:
             'photoz_sed': 'MOD_BEST',
         }
         for newname, oldname in namedict.items():
+            if newname not in tab.column_names:
+                tab = tab.append_column(
+                    newname, pa.array(self.estimated.data.ancil[oldname]))
+            else:
+                tab = tab.set_column(
+                    tab.schema.get_field_index(newname),
+                    newname,
+                    pa.array(self.estimated.data.ancil[oldname]))
             tab_astro[newname] = self.estimated.data.ancil[oldname]
-            tab = tab.append_column(
-                newname, pa.array(self.estimated.data.ancil[oldname]))
             # annoying to duplicate this, but we add to the "real"
             # parquet table and also the astropy version to get the
             # right astropy metadata
