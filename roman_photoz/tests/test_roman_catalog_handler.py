@@ -125,6 +125,5 @@ class TestRomanCatalogHandler:
             roman_catalog_handler.catalog["redshift"][1] == mock_catalog_data["redshift"][1]
         )
 
-
 if __name__ == "__main__":
     pytest.main(["-v", "test_roman_catalog_handler.py"])

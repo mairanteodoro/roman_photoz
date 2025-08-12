@@ -46,6 +46,8 @@ default_roman_config = {
     "ADD_DUSTEM": "NO",
     "LIB_ASCII": "YES",
 
+    "AUTO_ADAPT": "NO",
+
     "CAT_IN": "roman_simulated_catalog.parquet",
     "INP_TYPE": "F",
     "CAT_MAG": "AB",

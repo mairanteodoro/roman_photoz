@@ -226,6 +226,7 @@ class RomanCatalogProcess:
             ref_band=self.flux_cols[0],
             output_keys=self.default_roman_output_keys,
             lephare_config=self.config,
+            use_inform_offsets=False,
         )
 
         # dh = estimate_lephare.add_data('input', self.data)
