@@ -209,8 +209,12 @@ class SimulatedCatalog:
         ).as_posix()
         colnames = self.create_header(catalog_name=catalog_name)
 
-        self.simulated_data = np.genfromtxt(
-            catalog_name, dtype=None, names=colnames, encoding="utf-8"
+        # some columns are actually integers, e.g., model, ext_law, N_filt
+        # but treating these as floats doesn't really hurt anything; we are
+        # using these to generate a romancal catalog parquet output file
+        # that doesn't contain these columns anyway
+        self.simulated_data = np.loadtxt(
+            catalog_name, dtype=[(n, 'f4') for n in colnames], encoding="utf-8"
         )
         self.simulated_data = self.simulated_data[self.simulated_data['redshift'] > 0]
 
@@ -229,16 +233,10 @@ class SimulatedCatalog:
         final_catalog = self.add_error(catalog, mag_noise=self.mag_noise)
         final_catalog = self.add_ids(final_catalog)
 
-        context = np.full((len(catalog)), 0)
-        zspec = final_catalog["redshift"]
-        string_data = final_catalog["redshift"]
+        redshift = final_catalog["redshift"]
 
         final_catalog = rfn.append_fields(
-            final_catalog, "context", context, usemask=False
-        )
-        final_catalog = rfn.append_fields(final_catalog, "zspec", zspec, usemask=False)
-        final_catalog = rfn.append_fields(
-            final_catalog, "z_true", string_data, usemask=False
+            final_catalog, "redshift_true", redshift, usemask=False
         )
         # remove the redshift column
         final_catalog = rfn.drop_fields(final_catalog, ["redshift"])
@@ -308,7 +306,7 @@ class SimulatedCatalog:
                     continue
                 simulated_roman_catalog[colname] = simulated_value
 
-        simulated_roman_catalog['ztrue'] = catalog['zspec']
+        simulated_roman_catalog['redshift_true'] = catalog['redshift_true']
 
         return simulated_roman_catalog
 
@@ -401,7 +399,7 @@ class SimulatedCatalog:
             The list of column names for the catalog.
         """
         with open(catalog_name) as f:
-            # BEWARE of the format of LAPHEREWORK/lib_mag/*_COSMOS.dat!
+            # BEWARE of the format of LEPHAREWORK/lib_mag/*_COSMOS.dat!
             # ignore the first N_filt lines in the file
             for _ in range(len(self.filter_list) + 1):
                 next(f)
@@ -409,7 +407,7 @@ class SimulatedCatalog:
         colnames = [x for x in colname_list if "[N_filt]" not in x]
         colvector = [x for x in colname_list if "[N_filt]" in x]
         expanded_colvector = [
-            x.replace("N_filt", filter_name)
+            x.replace("[N_filt]", filter_name)
             for x in colvector
             for filter_name in self.filter_list
         ]

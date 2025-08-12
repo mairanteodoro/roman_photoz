@@ -96,8 +96,10 @@ class RomanCatalogHandler:
             self.catalog[fit_colname][m] *= 10**-32
             self.catalog[fit_err_colname][m] *= 10**-32
 
-        if "redshift" not in self.catalog.dtype.names:
+        if "redshift" not in self.cat_array.dtype.names:
             self.catalog['redshift'] = np.zeros(len(self.catalog), dtype='f4')
+        else:
+            self.catalog['redshift'] = self.cat_array['redshift']
 
         logger.info("Catalog formatting completed")
 

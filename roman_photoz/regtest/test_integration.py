@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from astropy.table import Table
+import numpy as np
 
 try:
     from importlib.resources import files
@@ -13,7 +14,9 @@ except ImportError:
 
 from roman_photoz.default_config_file import default_roman_config
 from roman_photoz.roman_catalog_process import RomanCatalogProcess
-from roman_photoz.utils.roman_photoz_utils import read_output_keys
+from roman_photoz import create_simulated_catalog
+
+from astropy.stats import mad_std
 
 # file containing the default output keys that the output file should have
 try:
@@ -37,48 +40,31 @@ def roman_catalog_process():
 
 
 @pytest.mark.bigdata
-def test_roman_photoz(rtdata, tmp_path):
-    # Get input test data from artifactory
-    # Note: Path should be relative to the repository root, NOT including inputs_root/env
-    # The rtdata.get_data() method will prepend the repository and environment for you
-    input_path = "WFI/image"
-    input_filename = "test_simulated_catalog.parquet"
-    rtdata.get_data(f"{Path(input_path, input_filename).as_posix()}")
-
-    # Verify input was retrieved
-    assert rtdata.input is not None
-    assert Path(rtdata.input).name == "test_simulated_catalog.parquet"
-
-    rtdata.output = "roman_photoz_integration_test_output.parquet"
+def test_roman_photoz(tmp_path):
+    # create catalog
+    sc = create_simulated_catalog.SimulatedCatalog(nobj=10000, mag_noise=0.02)
+    sc.process(tmp_path, 'cat.parquet')
 
     # create instance
     rcp = RomanCatalogProcess(
         config_filename=default_roman_config,
     )
 
-    rcp.process(
-        input_filename=Path(rtdata.input).name,
-        input_path=Path(rtdata.input).parent.as_posix(),
-        output_filename=rtdata.output,
-        output_path=tmp_path,
-        output_format="parquet",
-    )
+    input_filename = Path(tmp_path) / 'cat.parquet'
+    rcp.process(input_filename=input_filename)
 
-    # get the truth (avoid using cache here)
-    # truth_path = "truth/WFI/image"
-    # truth_filename = "roman_photoz_integration_test_truth.parquet"
-    # rtdata.get_truth(Path(truth_path, truth_filename).as_posix(), use_cache=False)
-
-    # read in output and truth files
-    output = Table.read(rtdata.output, format="parquet")
-    # truth = Table.read(rtdata.truth, format="parquet")
+    output = Table.read(input_filename, format="parquet")
 
     # get the expected column names
-    expected_cols = read_output_keys(DEFAULT_OUTPUT_KEYWORDS)
+    expected_cols = ['photoz',
+                      'photoz_high99', 'photoz_high90', 'photoz_high68',
+                      'photoz_low99', 'photoz_low90', 'photoz_low68',
+                      'photoz_gof', 'photoz_sed']
 
     # For now, we will just check that all the expected columns are present
-    assert all(
-        col in expected_cols
-        for col in output.colnames
-        if col != "zmean" and col != "zmode"
-    )
+    # and at least vaguely populated
+    for col in expected_cols:
+        assert col in output.columns
+        assert np.any(output[col] != 0)
+    # make sure the redshifts aren't crazy.
+    assert mad_std(output['photoz'] - output['redshift_true']) < 0.1

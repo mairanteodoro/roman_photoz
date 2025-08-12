@@ -106,11 +106,8 @@ class TestRomanCatalogProcess:
         # Check that process was called with the correct arguments
         mock_rcp.process.assert_called_once_with(
             input_filename=mock_args.input_filename,
-            input_path=mock_args.input_path,
             output_filename=mock_args.output_filename,
-            output_path=mock_args.output_path,
             output_format=mock_args.output_format,
-            save_results=mock_args.save_results,
             fit_colname=mock_args.fit_colname,
             fit_err_colname=mock_args.fit_err_colname,
         )
@@ -153,9 +150,10 @@ class TestRomanCatalogProcess:
         # Mock get_data and format_data
         rcp.get_data = MagicMock(return_value=Table())
         rcp.format_data = MagicMock()
+        rcp.update_input = MagicMock()
 
-        # Call process method but do not save results
-        rcp.process(save_results=False)
+        # Call process method
+        rcp.process(input_filename='test')
 
         # Verify create_informer_stage was called or not based on model existence
         if should_create_informer:
