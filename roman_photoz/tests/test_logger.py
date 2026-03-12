@@ -6,6 +6,14 @@ import pytest
 from roman_photoz.logger import setup_logging
 
 
+def _close_and_clear_handlers(logger_name="roman_photoz"):
+    """Close all handlers before clearing to avoid ResourceWarning."""
+    logger = logging.getLogger(logger_name)
+    for handler in logger.handlers[:]:
+        handler.close()
+    logger.handlers.clear()
+
+
 @pytest.fixture
 def temp_log_file(tmp_path):
     """Create a temporary log file path for testing."""
@@ -20,7 +28,7 @@ def test_setup_logging_creates_logger_with_correct_name():
 
 def test_setup_logging_creates_handlers_and_filters(tmp_path):
     """Test that setup_logging creates the correct handlers and filters."""
-    logging.getLogger("roman_photoz").handlers.clear()
+    _close_and_clear_handlers()
 
     log_file = tmp_path / "test_roman_photoz.log"
     logger = setup_logging(log_file=str(log_file))
@@ -54,7 +62,7 @@ def test_setup_logging_creates_handlers_and_filters(tmp_path):
 
 def test_setup_logging_uses_correct_formatter(tmp_path):
     """Test that setup_logging uses the correct formatter."""
-    logging.getLogger("roman_photoz").handlers.clear()
+    _close_and_clear_handlers()
 
     log_file = tmp_path / "test_roman_photoz.log"
     logger = setup_logging(log_file=str(log_file))
@@ -73,8 +81,8 @@ def test_setup_logging_uses_correct_formatter(tmp_path):
 
 def test_setup_logging_only_configures_once(tmp_path):
     """Test that setup_logging doesn't add handlers if already configured."""
-    logging.getLogger("roman_photoz").handlers.clear()
-    logging.getLogger().handlers.clear()
+    _close_and_clear_handlers()
+    _close_and_clear_handlers("root")
 
     log_file = tmp_path / "test_roman_photoz.log"
     logger1 = setup_logging(log_file=str(log_file))
@@ -105,8 +113,8 @@ def test_console_only_shows_info_messages(
     tmp_path, message_level, should_appear_on_console
 ):
     """Test that only INFO messages appear on the console."""
-    logging.getLogger("roman_photoz").handlers.clear()
-    logging.getLogger().handlers.clear()
+    _close_and_clear_handlers()
+    _close_and_clear_handlers("root")
 
     log_file = tmp_path / "test_roman_photoz.log"
     logger = setup_logging(log_file=str(log_file))
@@ -144,8 +152,8 @@ def test_console_only_shows_info_messages(
 )
 def test_all_messages_go_to_file(tmp_path, message_level):
     """Test that all log levels are written to the log file."""
-    logging.getLogger("roman_photoz").handlers.clear()
-    logging.getLogger().handlers.clear()
+    _close_and_clear_handlers()
+    _close_and_clear_handlers("root")
 
     log_file = tmp_path / "test_roman_photoz.log"
     logger = setup_logging(log_file=str(log_file))
