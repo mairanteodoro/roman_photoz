@@ -15,6 +15,7 @@ from asdf import AsdfFile
 from astropy.table import Table
 from rail.core import DataStore
 from rail.estimation.algos.lephare import LephareEstimator, LephareInformer
+from roman_datamodels import datamodels
 
 from roman_photoz.default_config_file import default_roman_config
 from roman_photoz.logger import logger
@@ -78,6 +79,10 @@ class RomanCatalogProcess:
         self.inform_stage = None
         self.estimated = None
         self.default_roman_output_keys = read_output_keys(DEFAULT_OUTPUT_KEYWORDS)
+
+        self.input_filename = None
+        self.output_filename = None
+        self.output_format = None
 
     def _set_config_file(self, config_filename: Union[dict, str] = ""):
         """
@@ -189,6 +194,7 @@ class RomanCatalogProcess:
             gal_config=gal_overrides,
             qso_config=qso_overrides,
         )
+
         self.inform_stage.inform(self.data)
 
     def _create_estimator_stage(self):
@@ -233,41 +239,48 @@ class RomanCatalogProcess:
 
     def _save_results(
         self,
-        output_filename: Optional[str] = None,
-        output_format: str = "parquet",
     ):
         """
         Save the results to the specified output file.
-
-        Parameters
-        ----------
-        output_filename : str, optional
-            Name of the output file.
-        output_format : str, optional
-            Format to save the results.
-            Supported formats are "parquet" (default) and "asdf".
 
         Raises
         ------
         ValueError
             If there are no results to save.
         """
-        if self.estimated is not None:
-            ancil_data = self.estimated.data.ancil
+
+        if self.output_filename is None:
+            logger.info("No output filename provided. Updating input file in place.")
+            self._update_input(self.input_filename, save_results=True)
+            self.output_filename = self.input_filename
+        elif self.output_filename is not None and self.output_format.lower() in [
+            "parquet",
+            "asdf",
+        ]:
+            if self.estimated is not None:
+                self._update_input(self.input_filename, save_results=False)
+            else:
+                logger.error("No results to save")
+                raise ValueError("No results to save.")
+
+            if self.output_format.lower() == "parquet":
+                import pyarrow.parquet as pq
+
+                pq.write_table(self.results, self.output_filename)
+            elif self.output_format.lower() == "asdf":
+                tree = {"roman_photoz_results": self.results.to_pydict()}
+                with AsdfFile(tree) as af:
+                    af.write_to(self.output_filename)
         else:
-            logger.error("No results to save")
-            raise ValueError("No results to save.")
+            logger.error(
+                f"Unsupported output format: {self.output_format}. Supported formats are 'parquet' and 'asdf'."
+            )
+            raise ValueError(
+                f"Unsupported output format: {self.output_format}. Supported formats are 'parquet' and 'asdf'."
+            )
+        logger.info(f"Results saved to {self.output_filename}.")
 
-        if output_format.lower() == "parquet":
-            ancil_data = Table(ancil_data)
-            ancil_data.write(output_filename, format="parquet", overwrite=True)
-        elif output_format.lower() == "asdf":
-            tree = {"roman_photoz_results": ancil_data}
-            with AsdfFile(tree) as af:
-                af.write_to(output_filename)
-        logger.info(f"Results saved to {output_filename}.")
-
-    def _update_input(self, input_filename):
+    def _update_input(self, input_filename, save_results=False):
         # TODO: this can be done with the Table class
         # directly; no need for pyarrow
         import pyarrow as pa
@@ -276,6 +289,9 @@ class RomanCatalogProcess:
         tab = pq.read_table(input_filename)
         tab_astro = Table.read(input_filename)
         meta = dict(tab.schema.metadata)
+
+        # Create a MultibandSourceCatalogModel instance to access RAD schema definitions
+        catalog_model = datamodels.MultibandSourceCatalogModel()
 
         namedict = {
             "photoz": "Z_BEST",
@@ -289,25 +305,36 @@ class RomanCatalogProcess:
             "photoz_sed": "MOD_BEST",
         }
         for newname, oldname in namedict.items():
+            # Get column definition from RAD schema
+            col_def = catalog_model.get_column_definition(newname)
+
+            # get unit and description from the column definition, if available
+            # (since all the photoz columns are unitless, we will just set unit to None for now)
+            description = col_def.get("description", "")
+
+            # Create PyArrow field with metadata
+            arr = pa.array(self.estimated.data.ancil[oldname])
+            field = pa.field(newname, arr.type, metadata={"description": description})
+
             if newname not in tab.column_names:
-                tab = tab.append_column(
-                    newname, pa.array(self.estimated.data.ancil[oldname])
-                )
+                tab = tab.append_column(field, arr)
             else:
-                tab = tab.set_column(
-                    tab.schema.get_field_index(newname),
-                    newname,
-                    pa.array(self.estimated.data.ancil[oldname]),
-                )
+                tab = tab.set_column(tab.schema.get_field_index(newname), field, arr)
+
+            # Also add to Astropy table with metadata
             tab_astro[newname] = self.estimated.data.ancil[oldname]
-            # annoying to duplicate this, but we add to the "real"
-            # parquet table and also the astropy version to get the
-            # right astropy metadata
+            tab_astro[newname].info.description = description
+
+            logger.info(
+                f"Applied RAD schema metadata to column '{newname}': "
+                f"description={description}"
+            )
 
         extra_astropy_metadata = astropy.table.meta.get_yaml_from_table(tab_astro)
         meta[b"table_meta_yaml"] = "\n".join(extra_astropy_metadata).encode("utf-8")
-        tab = tab.replace_schema_metadata(meta)
-        pq.write_table(tab, input_filename)
+        self.results = tab.replace_schema_metadata(meta)
+        if save_results:
+            pq.write_table(self.results, self.input_filename)
 
     def process(
         self,
@@ -334,8 +361,14 @@ class RomanCatalogProcess:
             The type of flux to use for fitting.
             Options are "psf" (default), "kron", "segment", or "aperture."
         """
+
+        self.input_filename = input_filename
+        if output_filename is not None:
+            self.output_filename = output_filename
+            self.output_format = output_format
+
         self.data = self._get_data(
-            input_filename=input_filename,
+            input_filename=self.input_filename,
             fit_colname=fit_colname,
             fit_err_colname=fit_err_colname,
         )
@@ -347,13 +380,7 @@ class RomanCatalogProcess:
             self._create_informer_stage()
         self._create_estimator_stage()
 
-        if output_filename is not None:
-            self._save_results(
-                output_filename=output_filename,
-                output_format=output_format,
-            )
-        else:
-            self._update_input(input_filename)
+        self._save_results()
 
     @property
     def informer_model_exists(self):
