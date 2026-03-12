@@ -13,7 +13,7 @@ import lephare as lp
 import numpy as np
 from asdf import AsdfFile
 from astropy.table import Table
-from rail.core.stage import RailStage
+from rail.core import DataStore
 from rail.estimation.algos.lephare import LephareEstimator, LephareInformer
 
 from roman_photoz.default_config_file import default_roman_config
@@ -21,8 +21,7 @@ from roman_photoz.logger import logger
 from roman_photoz.roman_catalog_handler import RomanCatalogHandler
 from roman_photoz.utils import read_output_keys
 
-DS = RailStage.data_store
-DS.__class__.allow_overwrite = True
+DataStore.allow_overwrite = True
 
 LEPHAREDIR = Path(os.environ.get("LEPHAREDIR", lp.LEPHAREDIR))
 LEPHAREWORK = os.environ.get("LEPHAREWORK", (LEPHAREDIR / "work").as_posix())
